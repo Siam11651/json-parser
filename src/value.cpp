@@ -14,3 +14,8 @@ const json::value::type &json::value::get_type() const
 {
     return m_type;
 }
+
+json::value::~value()
+{
+    
+}

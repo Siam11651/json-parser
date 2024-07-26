@@ -94,11 +94,13 @@ const json::number* json::number::parse_json_view(std::string_view &json)
         }
     }
 
+    json.remove_prefix(value.size());
+
     number *to_return = new number();
     to_return->m_valid = valid;
 
     {
-        std::stringstream ss;
+        std::stringstream ss(value);
 
         ss >> to_return->m_value;
     }
