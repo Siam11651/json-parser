@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-json::string::string() : value(value::type::string)
+json::string::string() : value(type::string)
 {
     
 }
