@@ -14,7 +14,7 @@ namespace json
 
     public:
         parser(const std::string_view &json_view);
-        const const value *make_value();
+        const json::value *make_value();
     };
 }
 

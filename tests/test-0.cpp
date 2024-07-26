@@ -1,9 +1,10 @@
 #include <parser.hpp>
+#include <string.hpp>
 
 int main()
 {
     json::parser parser("\"\\u0053\"");
-    std::unique_ptr<json::value> json_value = parser.make_value();
+    const json::value* const json_value = parser.make_value();
 
     return 0;
 }

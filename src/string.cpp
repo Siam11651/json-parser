@@ -20,7 +20,7 @@ json::string::string(const string &&other) : value(value::type::string)
     m_value = std::move(other.m_value);
 }
 
-json::string json::string::parse_json_view(std::string_view &json)
+const json::string* json::string::parse_json_view(std::string_view &json)
 {
     size_t start = 0;
 
@@ -29,7 +29,7 @@ json::string json::string::parse_json_view(std::string_view &json)
         start = 1;
     }
 
-    std::u32string value;
+    std::string value;
     bool valid = false;
     uint8_t escaped = 4;
     std::array<uint8_t, 4> hex_values;
@@ -138,21 +138,22 @@ json::string json::string::parse_json_view(std::string_view &json)
 
             if(escaped == 4)
             {
-                value.push_back(hex_values[0] << 12 | hex_values[1] << 8 | hex_values[2] << 4 | hex_values[3]);
+                value.push_back(hex_values[0] << 4 | hex_values[1]);
+                value.push_back(hex_values[2] << 4 | hex_values[3]);
             }
         }
     }
 
     json.remove_prefix(trim_size);
 
-    string to_return;
-    to_return.m_valid = valid;
-    to_return.m_value = std::move(value);
+    string* const to_return = new string();
+    to_return->m_valid = valid;
+    to_return->m_value = std::move(value);
 
     return to_return;
 }
 
-const std::u32string &json::string::get_value() const
+const std::string &json::string::get_value() const
 {
     return m_value;
 }
