@@ -1,7 +1,8 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-
+#include <value.hpp>
+#include <memory>
 #include <string_view>
 
 namespace json
@@ -13,7 +14,7 @@ namespace json
 
     public:
         parser(const std::string_view &json_view);
-        void parse();
+        const const value *make_value();
     };
 }
 

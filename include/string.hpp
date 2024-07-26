@@ -1,17 +1,22 @@
 #ifndef STRING_H
 #define STRING_H
 
+#include <value.hpp>
 #include <string>
 
 namespace json
 {
-    class string
+    class string : public value
     {
     private:
-        std::string m_value;
+        std::u32string m_value;
     
     public:
-        string(const std::string_view &json);
+        string();
+        string(const string &other);
+        string(const string &&other);
+        const std::u32string &get_value() const;
+        static string parse_json_view(std::string_view &json);
     };
 }
 

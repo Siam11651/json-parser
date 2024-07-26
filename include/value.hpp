@@ -15,7 +15,7 @@ namespace json
         };
 
     protected:
-        bool m_valid;
+        bool m_valid = true;
         type m_type;
 
         value(const type &_type);
@@ -23,6 +23,7 @@ namespace json
     public:
         const bool &is_valid() const;
         const type &get_type() const;
+        virtual ~value();
     };
 }
 
