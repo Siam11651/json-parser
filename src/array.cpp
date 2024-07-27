@@ -7,7 +7,19 @@ json::array::array() : value(type::array)
 
 const json::value *json::array::operator[] (const size_t &index) const
 {
-    return m_value[index];
+    if(index < m_value.size())
+    {
+        return m_value[index];
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+constexpr const size_t json::array::get_size() const
+{
+    return m_value.size();
 }
 
 json::array::~array()
