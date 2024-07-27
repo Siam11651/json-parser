@@ -16,21 +16,28 @@ const json::value *json::parser::parse_value()
     {
         const char &c = m_json_view.front();
 
-        if(c == '\"')
+        if(ws_view.find(c) == std::string_view::npos)
         {
-            return parse_string();
-        }
-        else if(number_first_view.find(c) != std::string_view::npos)
-        {
-            return parse_number();
-        }
-        else if(ws_view.find(c) != std::string_view::npos)
-        {
-            m_json_view.remove_prefix(1);
+            if(c == '\"')
+            {
+                return parse_string();
+            }
+            else if(c == '{')
+            {
+                return parse_object();
+            }
+            else if(number_first_view.find(c) != std::string_view::npos)
+            {
+                return parse_number();
+            }
+            else
+            {
+                return nullptr;
+            }
         }
         else
         {
-            return nullptr;
+            m_json_view.remove_prefix(1);
         }
     }
 
@@ -39,25 +46,13 @@ const json::value *json::parser::parse_value()
 
 const json::string *json::parser::parse_string()
 {
-    while(!m_json_view.empty())
+    if(m_json_view.front() == '\"')
     {
-        const char &c = m_json_view.front();
-
         m_json_view.remove_prefix(1);
-
-        if(c == '\"')
-        {
-            break;
-        }
-        else
-        {
-            const std::string_view ws_view(WS_CHARS);
-
-            if(ws_view.find(c) == std::string_view::npos)
-            {
-                return nullptr;
-            }
-        }
+    }
+    else
+    {
+        return nullptr;
     }
 
     if(m_json_view.empty())
@@ -189,8 +184,15 @@ const json::string *json::parser::parse_string()
     m_json_view.remove_prefix(trim_size);
 
     string* const to_return = new string();
-    to_return->m_valid = valid;
-    to_return->m_value = std::move(value);
+
+    if(valid)
+    {
+        to_return->m_value = std::move(value);
+    }
+    else
+    {
+        to_return->m_valid = false;
+    }
 
     return to_return;
 }
@@ -231,7 +233,7 @@ const json::number *json::parser::parse_number()
 
                     if(char_view.find(c) == std::string_view::npos)
                     {
-                        trim_size = i + 1;
+                        trim_size = i;
 
                         break;
                     }
@@ -292,12 +294,16 @@ const json::number *json::parser::parse_number()
     m_json_view.remove_prefix(trim_size);
 
     number *to_return = new number();
-    to_return->m_valid = valid;
 
+    if(valid)
     {
         std::stringstream ss(value);
 
         ss >> to_return->m_value;
+    }
+    else
+    {
+        to_return->m_valid = false;
     }
 
     return to_return;
@@ -308,6 +314,15 @@ const json::object *json::parser::parse_object()
     if(m_json_view.front() == '{')
     {
         m_json_view.remove_prefix(1);
+    }
+    else
+    {
+        return nullptr;
+    }
+
+    if(m_json_view.empty())
+    {
+        return nullptr;
     }
 
     /**
@@ -328,85 +343,15 @@ const json::object *json::parser::parse_object()
     {
         const char &c = m_json_view.front();
 
-        m_json_view.remove_prefix(1);
-
         if(state == 1)
         {
-            if(c == ':')
+            if(ws_view.find(c) == std::string_view::npos)
             {
-                state = 2;
-            }
-            else
-            {
-                if(ws_view.find(c) == std::string_view::npos)
+                if(c == ':')
                 {
-                    valid = false;
+                    state = 2;
 
-                    break;
-                }
-            }
-        }
-        else if(state == 2)
-        {
-            state = 3;
-            const value *parsed_value = parse_value();
-
-            fields.insert({field_name, parsed_value});
-        }
-        else if(state == 3)
-        {
-            if(c == ',')
-            {
-                state = 4;
-            }
-            else if(c == '}')
-            {
-                break;
-            }
-            else
-            {
-                if(ws_view.find(c) == std::string_view::npos)
-                {
-                    valid = false;
-
-                    break;
-                }
-            }
-        }
-        else if(state == 4)
-        {
-            const string *new_string = parse_string();
-            
-            if(new_string && new_string->is_valid())
-            {
-                state = 1;
-                field_name = new_string->get_value();
-
-                delete new_string;
-            }
-            else
-            {
-                valid = false;
-
-                break;
-            }
-        }
-        else    // put state 0 in the end cuz it is supposed to be used only once
-        {
-            if(c == '}')
-            {
-                break;
-            }
-            else
-            {
-                const string *new_string = parse_string();
-            
-                if(new_string && new_string->is_valid())
-                {
-                    state = 1;
-                    field_name = new_string->get_value();
-
-                    delete new_string;
+                    m_json_view.remove_prefix(1);
                 }
                 else
                 {
@@ -415,12 +360,136 @@ const json::object *json::parser::parse_object()
                     break;
                 }
             }
+            else
+            {
+                m_json_view.remove_prefix(1);
+            }
+        }
+        else if(state == 2)
+        {
+            const value *new_value = parse_value();
+
+            if(new_value && new_value->is_valid())
+            {
+                state = 3;
+
+                fields.insert({field_name, new_value});
+            }
+            else
+            {
+                valid = false;
+
+                break;
+            }
+        }
+        else if(state == 3)
+        {
+            if(ws_view.find(c) == std::string_view::npos)
+            {
+                if(c == ',')
+                {
+                    state = 4;
+
+                    m_json_view.remove_prefix(1);
+                }
+                else if(c == '}')
+                {
+                    m_json_view.remove_prefix(1);
+
+                    break;
+                }
+                else
+                {
+                    valid = false;
+
+                    break;
+                }
+            }
+            else
+            {
+                m_json_view.remove_prefix(1);
+            }
+        }
+        else if(state == 4)
+        {
+            if(ws_view.find(c) == std::string_view::npos)
+            {
+                if(c == '}')
+                {
+                    m_json_view.remove_prefix(1);
+
+                    break;
+                }
+                else
+                {
+                    const string *new_string = parse_string();
+
+                    if(new_string && new_string->is_valid())
+                    {
+                        state = 1;
+                        field_name = new_string->get_value();
+
+                        delete new_string;
+                    }
+                    else
+                    {
+                        valid = false;
+
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                m_json_view.remove_prefix(1);
+            }
+        }
+        else    // put state 0 in the end cuz it is supposed to be used only once
+        {
+            if(ws_view.find(c) == std::string_view::npos)
+            {
+                if(c == '}')
+                {
+                    m_json_view.remove_prefix(1);
+
+                    break;
+                }
+                else
+                {
+                    const string *new_string = parse_string();
+                
+                    if(new_string && new_string->is_valid())
+                    {
+                        state = 1;
+                        field_name = new_string->get_value();
+
+                        delete new_string;
+                    }
+                    else
+                    {
+                        valid = false;
+
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                m_json_view.remove_prefix(1);
+            }
         }
     }
 
     object *to_return = new object();
-    to_return->m_valid = valid;
-    to_return->m_fields = std::move(fields);
+
+    if(valid)
+    {
+        to_return->m_fields = std::move(fields);
+    }
+    else
+    {
+        to_return->m_valid = false;
+    }
 
     return to_return;
 }
