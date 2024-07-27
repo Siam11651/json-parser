@@ -8,13 +8,14 @@ namespace json
 {
     class number : public value
     {
+        friend class parser;
+
     private:
         double m_value;
 
     public:
         number();
         const double &get_value() const;
-        static const number* parse_json_view(std::string_view &json);
     };
 }
 

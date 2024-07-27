@@ -9,13 +9,14 @@ namespace json
 {
     class object : public value
     {
+        friend class parser;
+
     private:
         std::map<std::string, const value *> m_fields;
 
     public:
         object();
         const value *get_field(const std::string &name) const;
-        static const object* parse_json_view(std::string_view &json);
     };
 }
 
