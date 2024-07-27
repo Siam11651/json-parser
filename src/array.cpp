@@ -17,7 +17,7 @@ const json::value *json::array::operator[] (const size_t &index) const
     }
 }
 
-constexpr const size_t json::array::get_size() const
+size_t json::array::get_size() const
 {
     return m_value.size();
 }
