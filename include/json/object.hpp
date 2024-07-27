@@ -17,6 +17,7 @@ namespace json
     public:
         object();
         const value *operator[](const std::string &name) const;
+        const value *operator[](const std::string &&name) const;
         ~object();
     };
 }
