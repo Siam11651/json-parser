@@ -17,6 +17,7 @@ namespace json
     public:
         object();
         const value *get_field(const std::string &name) const;
+        ~object();
     };
 }
 

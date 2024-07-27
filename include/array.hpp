@@ -17,6 +17,7 @@ namespace json
     public:
         array();
         const value *operator[] (const size_t &index) const;
+        ~array();
     };
 }
 

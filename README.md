@@ -41,6 +41,3 @@ int main()
     return EXIT_SUCCESS;
 }
 ```
-
-## TODO:
-- Implement destructors to clear memory

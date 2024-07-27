@@ -39,5 +39,7 @@ int main()
         return -3;
     }
 
+    delete json_value;
+
     return EXIT_SUCCESS;
 }
