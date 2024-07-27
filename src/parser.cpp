@@ -621,9 +621,9 @@ const json::array *json::parser::parse_array()
     return to_return;
 }
 
-json::parser::parser(const std::string_view &json_view)
+json::parser::parser(const std::string_view &_json_view)
 {
-    m_json_view = json_view;
+    m_json_view = _json_view;
 }
 
 const json::value *json::parser::make_value()

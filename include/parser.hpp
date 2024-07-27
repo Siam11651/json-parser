@@ -24,7 +24,7 @@ namespace json
         const array *parse_array();
 
     public:
-        parser(const std::string_view &json_view);
+        parser(const std::string_view &_json_view);
         const json::value *make_value();
     };
 }
