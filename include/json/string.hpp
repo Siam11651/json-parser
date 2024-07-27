@@ -1,8 +1,8 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include <parser.hpp>
-#include <value.hpp>
+#include <json/parser.hpp>
+#include <json/value.hpp>
 #include <string>
 
 namespace json

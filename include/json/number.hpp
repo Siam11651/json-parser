@@ -1,7 +1,7 @@
 #ifndef NUMBER_H
 #define NUMBER_H
 
-#include <value.hpp>
+#include <json/value.hpp>
 #include <string_view>
 
 namespace json

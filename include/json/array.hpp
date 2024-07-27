@@ -1,8 +1,8 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
-#include <parser.hpp>
-#include <value.hpp>
+#include <json/parser.hpp>
+#include <json/value.hpp>
 #include <vector>
 
 namespace json

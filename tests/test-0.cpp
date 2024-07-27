@@ -1,8 +1,8 @@
-#include <parser.hpp>
-#include <string.hpp>
-#include <number.hpp>
-#include <object.hpp>
-#include <array.hpp>
+#include <json/parser.hpp>
+#include <json/string.hpp>
+#include <json/number.hpp>
+#include <json/object.hpp>
+#include <json/array.hpp>
 #include <iostream>
 
 int main()
