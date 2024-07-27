@@ -580,7 +580,7 @@ const json::array *json::parser::parse_array()
         {
             if(ws_view.find(c) == std::string_view::npos)
             {
-                if(c == '}')
+                if(c == ']')
                 {
                     m_json_view.remove_prefix(1);
 
