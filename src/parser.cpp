@@ -261,6 +261,8 @@ const json::number *json::parser::parse_number()
                 }
                 else
                 {
+                    trim_size = i;
+
                     break;
                 }
             }
@@ -270,6 +272,8 @@ const json::number *json::parser::parse_number()
 
                 if(char_view.find(c) == std::string_view::npos)
                 {
+                    trim_size = i;
+
                     break;
                 }
                 else

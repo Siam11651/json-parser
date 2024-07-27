@@ -3,13 +3,14 @@
 #include <number.hpp>
 #include <object.hpp>
 #include <array.hpp>
+#include <iostream>
 
 int main()
 {
     json::parser parser(R"({
         "abc":
         {
-            "def": 123,
+            "def": 123.456,
             "ghi":
             [
                 "hehe",
@@ -25,5 +26,18 @@ int main()
     const json::string *const ghi0 = (const json::string *)(*ghi)[0];
     const json::string *const ghi1 = (const json::string *)(*ghi)[1];
 
-    return 0;
+    if(std::abs(def->get_value() - 123.456) > 1e-6)
+    {
+        return -1;
+    }
+    else if(ghi0->get_value() != "hehe")
+    {
+        return -2;
+    }
+    else if(ghi1->get_value() != "hoho")
+    {
+        return -3;
+    }
+
+    return EXIT_SUCCESS;
 }
