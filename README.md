@@ -4,6 +4,13 @@ A simple json parser.
 
 ## Example:
 ```c++
+#include <parser.hpp>
+#include <string.hpp>
+#include <number.hpp>
+#include <object.hpp>
+#include <array.hpp>
+#include <iostream>
+
 int main()
 {
     json::parser parser(R"({
@@ -37,6 +44,8 @@ int main()
     {
         return -3;
     }
+
+    delete json_value;
 
     return EXIT_SUCCESS;
 }
