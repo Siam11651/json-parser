@@ -2,10 +2,12 @@
 #include <utils.hpp>
 #include <string.hpp>
 #include <number.hpp>
+#include <object.hpp>
 #include <array>
 #include <sstream>
+#include <map>
 
-const json::value *json::parser::parse_value(std::string_view &json)
+const json::value *json::parser::parse_value()
 {
     const std::string_view ws_view(WS_CHARS);
     const std::string_view number_first_view(SIGNED_DECIMAL_CHARS);
@@ -16,11 +18,11 @@ const json::value *json::parser::parse_value(std::string_view &json)
 
         if(c == '\"')
         {
-            return parse_string(m_json_view);
+            return parse_string();
         }
         else if(number_first_view.find(c) != std::string_view::npos)
         {
-            return parse_number(m_json_view);
+            return parse_number();
         }
         else if(ws_view.find(c) != std::string_view::npos)
         {
@@ -35,13 +37,32 @@ const json::value *json::parser::parse_value(std::string_view &json)
     return nullptr;
 }
 
-const json::string *json::parser::parse_string(std::string_view &json)
+const json::string *json::parser::parse_string()
 {
-    size_t start = 0;
-
-    if(json.front() == '\"')
+    while(!m_json_view.empty())
     {
-        start = 1;
+        const char &c = m_json_view.front();
+
+        m_json_view.remove_prefix(1);
+
+        if(c == '\"')
+        {
+            break;
+        }
+        else
+        {
+            const std::string_view ws_view(WS_CHARS);
+
+            if(ws_view.find(c) == std::string_view::npos)
+            {
+                return nullptr;
+            }
+        }
+    }
+
+    if(m_json_view.empty())
+    {
+        return nullptr;
     }
 
     std::string value;
@@ -54,11 +75,11 @@ const json::string *json::parser::parse_string(std::string_view &json)
      */
     uint8_t escaped = 4;
     std::array<uint8_t, 4> hex_values;
-    size_t trim_size = json.size();
+    size_t trim_size = m_json_view.size();
 
-    for(size_t i = start; i < json.size(); ++i)
+    for(size_t i = 0; i < m_json_view.size(); ++i)
     {
-        const char &c = json[i];
+        const char &c = m_json_view[i];
 
         if(escaped == 4)
         {
@@ -165,7 +186,7 @@ const json::string *json::parser::parse_string(std::string_view &json)
         }
     }
 
-    json.remove_prefix(trim_size);
+    m_json_view.remove_prefix(trim_size);
 
     string* const to_return = new string();
     to_return->m_valid = valid;
@@ -174,7 +195,7 @@ const json::string *json::parser::parse_string(std::string_view &json)
     return to_return;
 }
 
-const json::number *json::parser::parse_number(std::string_view &json)
+const json::number *json::parser::parse_number()
 {
     /**
      * @brief 
@@ -184,11 +205,12 @@ const json::number *json::parser::parse_number(std::string_view &json)
      */
     uint8_t state = 0;
     std::string value;
+    size_t trim_size = m_json_view.size();
     bool valid = true;
 
-    for(size_t i = 0; i < json.size(); ++i)
+    for(size_t i = 0; i < m_json_view.size(); ++i)
     {
-        const char &c  = json[i];
+        const char &c  = m_json_view[i];
 
         if(state == 0)
         {
@@ -209,6 +231,8 @@ const json::number *json::parser::parse_number(std::string_view &json)
 
                     if(char_view.find(c) == std::string_view::npos)
                     {
+                        trim_size = i + 1;
+
                         break;
                     }
                     else
@@ -265,7 +289,7 @@ const json::number *json::parser::parse_number(std::string_view &json)
         }
     }
 
-    json.remove_prefix(value.size());
+    m_json_view.remove_prefix(trim_size);
 
     number *to_return = new number();
     to_return->m_valid = valid;
@@ -279,9 +303,126 @@ const json::number *json::parser::parse_number(std::string_view &json)
     return to_return;
 }
 
-const json::object *json::parser::parse_object(std::string_view &json)
+const json::object *json::parser::parse_object()
 {
-    return nullptr;
+    if(m_json_view.front() == '{')
+    {
+        m_json_view.remove_prefix(1);
+    }
+
+    /**
+     * @brief
+     * state 0 -> expect new member or '}'
+     * state 1 -> expect ':'
+     * state 2 -> expect value
+     * state 3 -> expect ',' or '}'
+     * state 4 -> expect new member
+     */
+    uint8_t state = 0;
+    bool valid = true;
+    std::string field_name;
+    std::map<std::string, const value *> fields;
+    const std::string_view ws_view(WS_CHARS);
+
+    while(!m_json_view.empty())
+    {
+        const char &c = m_json_view.front();
+
+        m_json_view.remove_prefix(1);
+
+        if(state == 1)
+        {
+            if(c == ':')
+            {
+                state = 2;
+            }
+            else
+            {
+                if(ws_view.find(c) == std::string_view::npos)
+                {
+                    valid = false;
+
+                    break;
+                }
+            }
+        }
+        else if(state == 2)
+        {
+            state = 3;
+            const value *parsed_value = parse_value();
+
+            fields.insert({field_name, parsed_value});
+        }
+        else if(state == 3)
+        {
+            if(c == ',')
+            {
+                state = 4;
+            }
+            else if(c == '}')
+            {
+                break;
+            }
+            else
+            {
+                if(ws_view.find(c) == std::string_view::npos)
+                {
+                    valid = false;
+
+                    break;
+                }
+            }
+        }
+        else if(state == 4)
+        {
+            const string *new_string = parse_string();
+            
+            if(new_string && new_string->is_valid())
+            {
+                state = 1;
+                field_name = new_string->get_value();
+
+                delete new_string;
+            }
+            else
+            {
+                valid = false;
+
+                break;
+            }
+        }
+        else    // put state 0 in the end cuz it is supposed to be used only once
+        {
+            if(c == '}')
+            {
+                break;
+            }
+            else
+            {
+                const string *new_string = parse_string();
+            
+                if(new_string && new_string->is_valid())
+                {
+                    state = 1;
+                    field_name = new_string->get_value();
+
+                    delete new_string;
+                }
+                else
+                {
+                    valid = false;
+
+                    break;
+                }
+            }
+        }
+    }
+
+    object *to_return = new object();
+    to_return->m_valid = valid;
+    to_return->m_fields = std::move(fields);
+
+    return to_return;
 }
 
 json::parser::parser(const std::string_view &json_view)
@@ -291,5 +432,5 @@ json::parser::parser(const std::string_view &json_view)
 
 const json::value *json::parser::make_value()
 {
-    return parse_value(m_json_view);
+    return parse_value();
 }
