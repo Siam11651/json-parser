@@ -1,8 +1,8 @@
-#include <parser.hpp>
-#include <utils.hpp>
 #include <string.hpp>
 #include <number.hpp>
 #include <object.hpp>
+#include <array.hpp>
+#include <utils.hpp>
 #include <array>
 #include <sstream>
 #include <map>
@@ -25,6 +25,10 @@ const json::value *json::parser::parse_value()
             else if(c == '{')
             {
                 return parse_object();
+            }
+            else if(c == '[')
+            {
+                return parse_array();
             }
             else if(number_first_view.find(c) != std::string_view::npos)
             {
@@ -414,29 +418,20 @@ const json::object *json::parser::parse_object()
         {
             if(ws_view.find(c) == std::string_view::npos)
             {
-                if(c == '}')
-                {
-                    m_json_view.remove_prefix(1);
+                const string *new_string = parse_string();
 
-                    break;
+                if(new_string && new_string->is_valid())
+                {
+                    state = 1;
+                    field_name = new_string->get_value();
+
+                    delete new_string;
                 }
                 else
                 {
-                    const string *new_string = parse_string();
+                    valid = false;
 
-                    if(new_string && new_string->is_valid())
-                    {
-                        state = 1;
-                        field_name = new_string->get_value();
-
-                        delete new_string;
-                    }
-                    else
-                    {
-                        valid = false;
-
-                        break;
-                    }
+                    break;
                 }
             }
             else
@@ -485,6 +480,138 @@ const json::object *json::parser::parse_object()
     if(valid)
     {
         to_return->m_fields = std::move(fields);
+    }
+    else
+    {
+        to_return->m_valid = false;
+    }
+
+    return to_return;
+}
+
+const json::array *json::parser::parse_array()
+{
+    if(m_json_view.front() == '[')
+    {
+        m_json_view.remove_prefix(1);
+    }
+    else
+    {
+        return nullptr;
+    }
+
+    if(m_json_view.empty())
+    {
+        return nullptr;
+    }
+
+    /**
+     * @brief
+     * state 0 -> expect new element or ']'
+     * state 1 -> expect ',' or ']'
+     * state 2 -> expect new element
+     */
+    uint8_t state = 0;
+    bool valid = true;
+    std::vector<const value *> values;
+    const std::string_view ws_view(WS_CHARS);
+
+    while(!m_json_view.empty())
+    {
+        const char &c = m_json_view.front();
+
+        if(state == 1)
+        {
+            if(ws_view.find(c) == std::string_view::npos)
+            {
+                if(c == ',')
+                {
+                    state = 2;
+
+                    m_json_view.remove_prefix(1);
+                }
+                else if(c == ']')
+                {
+                    m_json_view.remove_prefix(1);
+
+                    break;
+                }
+                else
+                {
+                    valid = false;
+
+                    break;
+                }
+            }
+            else
+            {
+                m_json_view.remove_prefix(1);
+            }
+        }
+        else if(state == 2)
+        {
+            if(ws_view.find(c) == std::string_view::npos)
+            {
+                const value *new_value = parse_value();
+
+                if(new_value && new_value->is_valid())
+                {
+                    state = 1;
+
+                    values.push_back(new_value);
+                }
+                else
+                {
+                    valid = false;
+
+                    break;
+                }
+            }
+            else
+            {
+                m_json_view.remove_prefix(1);
+            }
+        }
+        else    // put state 0 in the end cuz it is supposed to be used only once
+        {
+            if(ws_view.find(c) == std::string_view::npos)
+            {
+                if(c == '}')
+                {
+                    m_json_view.remove_prefix(1);
+
+                    break;
+                }
+                else
+                {
+                    const value *new_value = parse_value();
+                
+                    if(new_value && new_value->is_valid())
+                    {
+                        state = 1;
+                        
+                        values.push_back(new_value);
+                    }
+                    else
+                    {
+                        valid = false;
+
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                m_json_view.remove_prefix(1);
+            }
+        }
+    }
+
+    array *to_return = new array();
+
+    if(valid)
+    {
+        to_return->m_value = std::move(values);
     }
     else
     {

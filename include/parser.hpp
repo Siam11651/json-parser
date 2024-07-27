@@ -10,6 +10,7 @@ namespace json
     class string;
     class number;
     class object;
+    class array;
 
     class parser
     {
@@ -20,6 +21,7 @@ namespace json
         const string *parse_string();
         const number *parse_number();
         const object *parse_object();
+        const array *parse_array();
 
     public:
         parser(const std::string_view &json_view);

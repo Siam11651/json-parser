@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5.0)
 project(json-parser VERSION 0.1.0 LANGUAGES C CXX)
 
 add_library(json-parser
+    "src/array.cpp"
     "src/number.cpp"
     "src/object.cpp"
     "src/parser.cpp"
