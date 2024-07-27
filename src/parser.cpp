@@ -199,11 +199,22 @@ const json::number *json::parser::parse_number(std::string_view &json)
             }
             else
             {
-                const std::string_view char_view(i == 0 ? json::SIGNED_DECIMAL_CHARS : json::SIGNED_DECIMAL_CHARS + 1);
-
-                if(char_view.find(c) == std::string_view::npos)
+                if(i == 0 && c == '-')
                 {
-                    break;
+                    valid = false;
+                }
+                else
+                {
+                    const std::string_view char_view(json::SIGNED_DECIMAL_CHARS + 1);
+
+                    if(char_view.find(c) == std::string_view::npos)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        valid = true;
+                    }
                 }
             }
 
