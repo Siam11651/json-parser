@@ -5,9 +5,18 @@ json::object::object() : value(type::object)
 
 }
 
-const json::value *json::object::get_field(const std::string &name) const
+const json::value *json::object::operator[](const std::string &name) const
 {
-    return m_fields.at(name);
+    const std::map<std::string, const value *>::const_iterator found = m_fields.find(name);
+
+    if(found == m_fields.cend())
+    {
+        return nullptr;
+    }
+    else
+    {
+        return found->second;
+    }
 }
 
 json::object::~object()
