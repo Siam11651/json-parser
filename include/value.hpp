@@ -21,6 +21,8 @@ namespace json
         value(const type &_type);
         
     public:
+        value(const value &) = delete;      // only use pointers which are generated >:(
+        value(const value &&) = delete;
         const bool &is_valid() const;
         const type &get_type() const;
         virtual ~value();

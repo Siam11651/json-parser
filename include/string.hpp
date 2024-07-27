@@ -16,7 +16,6 @@ namespace json
     
     public:
         string();
-        string(const string &other);
         const std::string &get_value() const;
     };
 }
